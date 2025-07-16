@@ -82,7 +82,7 @@ if(hotel.getActive()){
                 .findById(roomId)
                 .orElseThrow(()->new ResourceNotFoundException("Room not found with this id :" + roomId));
 
-        inventoryService.deleteFutureInventory(room);
+        inventoryService.deleteAllInventories(room);
 
         roomRepository.deleteById(roomId);
 

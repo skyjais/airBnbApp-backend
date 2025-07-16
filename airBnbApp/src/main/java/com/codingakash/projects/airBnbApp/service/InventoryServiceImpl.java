@@ -1,16 +1,25 @@
 package com.codingakash.projects.airBnbApp.service;
 
+import aj.org.objectweb.asm.commons.Remapper;
+import com.codingakash.projects.airBnbApp.dto.HotelDto;
+import com.codingakash.projects.airBnbApp.dto.HotelSearchRequest;
+import com.codingakash.projects.airBnbApp.entity.Hotel;
 import com.codingakash.projects.airBnbApp.entity.Inventory;
 import com.codingakash.projects.airBnbApp.entity.Room;
 import com.codingakash.projects.airBnbApp.repository.InventoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.cglib.core.Local;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +28,7 @@ public class InventoryServiceImpl implements InventoryService {
 
 
     private final InventoryRepository inventoryRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public void initializeRoomForAYear(Room room) {
@@ -30,8 +40,9 @@ public class InventoryServiceImpl implements InventoryService {
             Inventory inventory = Inventory.builder()
                                                     .hotel(room.getHotel())
                                                     .room(room)
-                                                    .bookedCount(0).
-                                                    city(room.getHotel().getCity())
+                                                    .bookedCount(0)
+                                                    .reservedCount(0)
+                                                    .city(room.getHotel().getCity())
                                                     .date(today)
                                                     .price(room.getBasePrice())
                                                     .surgeFactor(BigDecimal.ONE)
@@ -46,24 +57,30 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    public void deleteFutureInventory(Room room) {
-        LocalDate today = LocalDate.now();
+    public void deleteAllInventories(Room room) {
+        log.info("Deleting the inventories of room with id: {}", room.getId());
+        inventoryRepository.deleteByRoom(room);
 
 
-         /*
+    }
 
+    @Override
+    public Page<HotelDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
+        Pageable pageable = PageRequest.of(hotelSearchRequest.getPage(), hotelSearchRequest.getSize());
 
-          inventoryRepository.deleteByDateAfterAndRoom(today , room );
+        log.info("Searching Hotels for {} city , from {} , to {}" , hotelSearchRequest.getCity(), hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate());
+        Long dateCount = ChronoUnit.DAYS.between(hotelSearchRequest.getStartDate(),
+                hotelSearchRequest.getEndDate()) + 1;
 
-        * Because Spring only deleted future inventory, but some past or today's inventory
-        * entries still exist for that room — and your DB doesn’t allow deleting a Room
-        *  that's still referenced in inventory.
-        * */
+Page<Hotel> hotelPage =
+        inventoryRepository.findHotelsWithAvailableInventory(hotelSearchRequest.getCity()
+                ,hotelSearchRequest.getStartDate(),
+                 hotelSearchRequest.getEndDate(),
+                 hotelSearchRequest.getRoomsCount(),
+                 dateCount ,
+                 pageable);
 
-
-        inventoryRepository.deleteByDateGreaterThanEqualAndRoom(today, room);
-        //delete Today and after ✅ so there is no inventory left for the room and so that DB allowed to delete room
-
+        return   hotelPage.map((element)->modelMapper.map(element , HotelDto.class)) ;
     }
 
 
