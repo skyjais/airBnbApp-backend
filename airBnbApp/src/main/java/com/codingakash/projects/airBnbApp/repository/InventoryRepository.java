@@ -57,4 +57,5 @@ List<Inventory> findAndLockAvailableInventory(
         @Param("roomsCount") Integer roomsCount
 );
 
+    List<Inventory> findByHotelAndDateBetween(Hotel hotel, LocalDate startDate, LocalDate endDate);
 }
