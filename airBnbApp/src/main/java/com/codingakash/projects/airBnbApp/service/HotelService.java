@@ -4,6 +4,8 @@ import com.codingakash.projects.airBnbApp.dto.HotelDto;
 import com.codingakash.projects.airBnbApp.dto.HotelInfoDto;
 import com.codingakash.projects.airBnbApp.entity.Hotel;
 
+import java.util.List;
+
 public interface HotelService {
 
     HotelDto createNewHotel(HotelDto hotelDto);
@@ -17,4 +19,6 @@ public interface HotelService {
    void activateHotel(Long hotelId);
 
     HotelInfoDto getHotelInfoById(Long hotelId);
+
+    List<HotelDto> getAllHotels();
 }
